@@ -10,5 +10,5 @@ The tool is useful to package cache files for CI when other tools cannot guarant
 Example usage:
 
 ```bash
-ctar --size 10MB dir_to_archive archive.tar.gz
+ctar --size 10MB archive.tar.gz dir_to_archive
 ```

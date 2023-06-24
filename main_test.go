@@ -78,7 +78,7 @@ func Test_run(t *testing.T) {
 
 		archiveFilepath, unarchivedPath := getSingleTestPaths(t, "run")
 
-		args := []string{"ctar", sourceDir, archiveFilepath}
+		args := []string{"ctar", archiveFilepath, sourceDir}
 
 		exitCode := run(stdOut, stdErr, args)
 		assert.Equal(t, 0, exitCode)
@@ -113,7 +113,7 @@ func Test_run(t *testing.T) {
 
 		archiveFilepath, _ := getSingleTestPaths(t, "dash/prefix")
 
-		args := []string{"ctar", sourceDir, archiveFilepath}
+		args := []string{"ctar", archiveFilepath, sourceDir}
 
 		exitCode := run(stdOut, stdErr, args)
 		assert.Equal(t, 1, exitCode)

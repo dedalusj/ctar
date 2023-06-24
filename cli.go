@@ -18,7 +18,7 @@ func parseCliArgs(stdErr io.Writer, args []string) (Args, *int) {
 	cli.SetOutput(stdErr)
 
 	cli.Usage = func() {
-		fmt.Fprintf(cli.Output(), "usage: %s [-sv] source-dir archive-file\n", programName)
+		_, _ = fmt.Fprintf(cli.Output(), "usage: %s [-sv] archive-file source-dir\n", programName)
 		cli.PrintDefaults()
 	}
 
@@ -38,17 +38,17 @@ func parseCliArgs(stdErr io.Writer, args []string) (Args, *int) {
 
 	args = cli.Args()
 	if len(args) < 1 {
-		_, _ = fmt.Fprintln(stdErr, "source-dir missing")
-		cli.Usage()
-		return Args{}, ptr(1)
-	}
-	if len(args) < 2 {
 		_, _ = fmt.Fprintln(stdErr, "archive-file missing")
 		cli.Usage()
 		return Args{}, ptr(1)
 	}
+	if len(args) < 2 {
+		_, _ = fmt.Fprintln(stdErr, "source-dir missing")
+		cli.Usage()
+		return Args{}, ptr(1)
+	}
 
-	sourceDir, archiveFile := args[0], args[1]
+	archiveFile, sourceDir := args[0], args[1]
 	if sdInfo, err := os.Stat(sourceDir); os.IsNotExist(err) {
 		_, _ = fmt.Fprintf(stdErr, "Source directory %s does not exists\n", sourceDir)
 		cli.Usage()
