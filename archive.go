@@ -2,7 +2,6 @@ package main
 
 import (
 	"archive/tar"
-	"compress/gzip"
 	"fmt"
 	"io"
 	"io/fs"
@@ -10,6 +9,8 @@ import (
 	"path/filepath"
 	"sort"
 	"time"
+
+	gzip "github.com/klauspost/pgzip"
 )
 
 type Args struct {
