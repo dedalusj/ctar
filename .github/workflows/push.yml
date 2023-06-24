@@ -27,7 +27,7 @@ jobs:
       - name: Build
         run: go build -v ./...
       - name: Test
-        run: go test -race -v ./... -coverprofile coverage.out -covermode count
+        run: go test -race -v ./... -coverprofile coverage.out -covermode atomic
       - name: Coverage
         env:
           TESTCOVERAGE_THRESHOLD: 90
