@@ -13,11 +13,17 @@ import (
 // parseCliArgs parse and validate the cli args
 // if any of the cli args fail validation it will print an error and exit
 func parseCliArgs(stdErr io.Writer, args []string) (Args, *int) {
-	cli := flag.NewFlagSet(args[0], flag.ContinueOnError)
+	programName := args[0]
+	cli := flag.NewFlagSet(programName, flag.ContinueOnError)
 	cli.SetOutput(stdErr)
 
+	cli.Usage = func() {
+		fmt.Fprintf(cli.Output(), "usage: %s [-sv] source-dir archive-file\n", programName)
+		cli.PrintDefaults()
+	}
+
 	var maxSizeStr string
-	cli.StringVar(&maxSizeStr, "size", "0", "Maximum size of all the files to include in the archive. Use 0 if all the files are to be archived")
+	cli.StringVar(&maxSizeStr, "s", "0", "Maximum size of all the files to include in the archive. Use 0 if all the files are to be archived")
 
 	var verbose bool
 	cli.BoolVar(&verbose, "v", false, "Verbose mode to list files included in the archive")
@@ -31,8 +37,13 @@ func parseCliArgs(stdErr io.Writer, args []string) (Args, *int) {
 	}
 
 	args = cli.Args()
+	if len(args) < 1 {
+		_, _ = fmt.Fprintln(stdErr, "source-dir missing")
+		cli.Usage()
+		return Args{}, ptr(1)
+	}
 	if len(args) < 2 {
-		_, _ = fmt.Fprintln(stdErr, "Argument missing")
+		_, _ = fmt.Fprintln(stdErr, "archive-file missing")
 		cli.Usage()
 		return Args{}, ptr(1)
 	}

@@ -16,9 +16,9 @@ func Test_parseCliArgs(t *testing.T) {
 		_, exitCode := parseCliArgs(stdErr, []string{"app", "-h"})
 		assert.NotNil(t, exitCode)
 		assert.Equal(t, 0, *exitCode)
-		assert.Contains(t, stdErr.Content(), "Usage")
+		assert.Contains(t, stdErr.Content(), "usage: app [-sv] source-dir archive-file")
 		assert.Contains(t, stdErr.Content(), "-v")
-		assert.Contains(t, stdErr.Content(), "-size")
+		assert.Contains(t, stdErr.Content(), "-s")
 	})
 
 	t.Run("it returns an error if both arguments are missing", func(t *testing.T) {
@@ -27,8 +27,8 @@ func Test_parseCliArgs(t *testing.T) {
 		_, exitCode := parseCliArgs(stdErr, []string{"app"})
 		assert.NotNil(t, exitCode)
 		assert.Equal(t, 1, *exitCode)
-		assert.Contains(t, stdErr.Content(), "Usage")
-		assert.Contains(t, stdErr.Content(), "Argument missing")
+		assert.Contains(t, stdErr.Content(), "usage: app [-sv] source-dir archive-file")
+		assert.Contains(t, stdErr.Content(), "source-dir missing")
 	})
 
 	t.Run("it returns an error if the archive file is missing", func(t *testing.T) {
@@ -37,8 +37,8 @@ func Test_parseCliArgs(t *testing.T) {
 		_, exitCode := parseCliArgs(stdErr, []string{"app", "source"})
 		assert.NotNil(t, exitCode)
 		assert.Equal(t, 1, *exitCode)
-		assert.Contains(t, stdErr.Content(), "Usage")
-		assert.Contains(t, stdErr.Content(), "Argument missing")
+		assert.Contains(t, stdErr.Content(), "usage: app [-sv] source-dir archive-file")
+		assert.Contains(t, stdErr.Content(), "archive-file missing")
 	})
 
 	t.Run("it returns an error if the source directory does not exists", func(t *testing.T) {
@@ -47,7 +47,7 @@ func Test_parseCliArgs(t *testing.T) {
 		_, exitCode := parseCliArgs(stdErr, []string{"app", "non_existing", "test.tar.gz"})
 		assert.NotNil(t, exitCode)
 		assert.Equal(t, 1, *exitCode)
-		assert.Contains(t, stdErr.Content(), "Usage")
+		assert.Contains(t, stdErr.Content(), "usage: app [-sv] source-dir archive-file")
 		assert.Regexp(t, regexp.MustCompile("Source directory \\S+ does not exists"), stdErr.Content())
 	})
 
@@ -60,24 +60,24 @@ func Test_parseCliArgs(t *testing.T) {
 		_, exitCode := parseCliArgs(stdErr, []string{"app", filename, "test.tar.gz"})
 		assert.NotNil(t, exitCode)
 		assert.Equal(t, 1, *exitCode)
-		assert.Contains(t, stdErr.Content(), "Usage")
+		assert.Contains(t, stdErr.Content(), "usage: app [-sv] source-dir archive-file")
 		assert.Regexp(t, regexp.MustCompile("Source directory \\S+ is not a directory"), stdErr.Content())
 	})
 
 	t.Run("it returns an error if max size has an invalid format", func(t *testing.T) {
 		_, stdErr := newMockWriters()
 
-		_, exitCode := parseCliArgs(stdErr, []string{"app", "--size", "foo", testDir, "test.tar.gz"})
+		_, exitCode := parseCliArgs(stdErr, []string{"app", "-s", "foo", testDir, "test.tar.gz"})
 		assert.NotNil(t, exitCode)
 		assert.Equal(t, 1, *exitCode)
-		assert.Contains(t, stdErr.Content(), "Usage")
+		assert.Contains(t, stdErr.Content(), "usage: app [-sv] source-dir archive-file")
 		assert.Contains(t, stdErr.Content(), "Invalid format for max size")
 	})
 
 	t.Run("it correctly parse the args", func(t *testing.T) {
 		_, stdErr := newMockWriters()
 
-		parsedArgs, exitCode := parseCliArgs(stdErr, []string{"app", "--size", "5.2MB", "-v", testDir, "test.tar.gz"})
+		parsedArgs, exitCode := parseCliArgs(stdErr, []string{"app", "-s", "5.2MB", "-v", testDir, "test.tar.gz"})
 		assert.Nil(t, exitCode)
 		assert.Empty(t, stdErr.Content())
 		assert.Equal(t, Args{
