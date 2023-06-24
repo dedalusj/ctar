@@ -27,13 +27,15 @@ func Test_Archive(t *testing.T) {
 	for _, maxSize := range sizes {
 		maxSize := maxSize
 		t.Run(fmt.Sprintf("it archives a directory up to the specified maximum size - %d", maxSize), func(t *testing.T) {
+			stdOut, _ := newMockWriters()
+
 			archiveFilepath, unarchivedPath := getSingleTestPaths(t, fmt.Sprint(maxSize))
 
 			err := Archive(Args{
 				SourceDir:   sourceDir,
 				ArchiveFile: archiveFilepath,
 				MaxSize:     maxSize,
-			})
+			}, stdOut)
 			assert.NoError(t, err)
 
 			err = archiver.Unarchive(archiveFilepath, unarchivedPath)
@@ -65,13 +67,15 @@ func Test_Archive(t *testing.T) {
 	}
 
 	t.Run("it archives all the files if max size is zero", func(t *testing.T) {
+		stdOut, _ := newMockWriters()
+
 		archiveFilepath, unarchivedPath := getSingleTestPaths(t, "all")
 
 		err := Archive(Args{
 			SourceDir:   sourceDir,
 			ArchiveFile: archiveFilepath,
 			MaxSize:     0,
-		})
+		}, stdOut)
 		assert.NoError(t, err)
 
 		err = archiver.Unarchive(archiveFilepath, unarchivedPath)
@@ -99,6 +103,8 @@ func Test_Archive(t *testing.T) {
 	})
 
 	t.Run("it preserves the files modified time", func(t *testing.T) {
+		stdOut, _ := newMockWriters()
+
 		archiveFilepath, _ := getSingleTestPaths(t, "mtime")
 
 		// set the time of the source files back one week to ease the testing of mtime
@@ -109,7 +115,7 @@ func Test_Archive(t *testing.T) {
 			SourceDir:   sourceDir,
 			ArchiveFile: archiveFilepath,
 			MaxSize:     0,
-		})
+		}, stdOut)
 		assert.NoError(t, err)
 
 		err = archiver.Walk(archiveFilepath, func(f archiver.File) error {
@@ -126,6 +132,56 @@ func Test_Archive(t *testing.T) {
 			return nil
 		})
 		assert.NoError(t, err)
+	})
+
+	t.Run("it returns an error is the source dir does not exists", func(t *testing.T) {
+		stdOut, _ := newMockWriters()
+
+		archiveFilepath, _ := getSingleTestPaths(t, "mtime")
+
+		err := Archive(Args{
+			SourceDir:   "non_existent",
+			ArchiveFile: archiveFilepath,
+			MaxSize:     0,
+		}, stdOut)
+		assert.Error(t, err)
+	})
+
+	t.Run("it returns an error if it can't initialise the archive file", func(t *testing.T) {
+		stdOut, _ := newMockWriters()
+
+		archiveFilepath, _ := getSingleTestPaths(t, "dash/prefix")
+
+		err := Archive(Args{
+			SourceDir:   sourceDir,
+			ArchiveFile: archiveFilepath,
+			MaxSize:     0,
+		}, stdOut)
+		assert.Error(t, err)
+	})
+
+	t.Run("it prints the archived files if verbose", func(t *testing.T) {
+		stdOut, _ := newMockWriters()
+
+		archiveFilepath, unarchivedPath := getSingleTestPaths(t, "verbose")
+
+		err := Archive(Args{
+			SourceDir:   sourceDir,
+			ArchiveFile: archiveFilepath,
+			MaxSize:     1000000,
+			Verbose:     true,
+		}, stdOut)
+		assert.NoError(t, err)
+
+		err = archiver.Unarchive(archiveFilepath, unarchivedPath)
+		assert.NoError(t, err)
+
+		var numArchivedFiles int
+		assertDir(t, unarchivedPath, func(t *testing.T, path string, fileInfo os.FileInfo) {
+			numArchivedFiles += 1
+		})
+
+		assert.Equal(t, numArchivedFiles, len(stdOut.Lines()))
 	})
 }
 

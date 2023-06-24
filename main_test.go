@@ -1,15 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"os"
 	"path"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/mholt/archiver/v3"
+	"github.com/stretchr/testify/assert"
 )
 
 var testDir string
@@ -51,4 +54,68 @@ func teardown() {
 	if err := os.RemoveAll(testDir); err != nil {
 		panic(err)
 	}
+}
+
+type mockWriter struct {
+	bytes.Buffer
+}
+
+func (m *mockWriter) Content() string {
+	return strings.Trim(m.String(), "\n ")
+}
+
+func (m *mockWriter) Lines() []string {
+	return strings.Split(m.Content(), "\n")
+}
+
+func newMockWriters() (*mockWriter, *mockWriter) {
+	return &mockWriter{}, &mockWriter{}
+}
+
+func Test_run(t *testing.T) {
+	t.Run("it runs the tool", func(t *testing.T) {
+		stdOut, stdErr := newMockWriters()
+
+		archiveFilepath, unarchivedPath := getSingleTestPaths(t, "run")
+
+		args := []string{"ctar", sourceDir, archiveFilepath}
+
+		exitCode := run(stdOut, stdErr, args)
+		assert.Equal(t, 0, exitCode)
+
+		err := archiver.Unarchive(archiveFilepath, unarchivedPath)
+		assert.NoError(t, err)
+
+		var numExpectedFiles uint64
+		assertDir(t, sourceDir, func(t *testing.T, path string, fileInfo os.FileInfo) {
+			numExpectedFiles += 1
+		})
+
+		var numArchivedFiles uint64
+		assertDir(t, unarchivedPath, func(t *testing.T, path string, fileInfo os.FileInfo) {
+			numArchivedFiles += 1
+		})
+
+		assert.Equal(t, numExpectedFiles, numArchivedFiles)
+	})
+
+	t.Run("it exits with non zero if the cli args are wrong", func(t *testing.T) {
+		stdOut, stdErr := newMockWriters()
+
+		args := []string{"ctar"}
+
+		exitCode := run(stdOut, stdErr, args)
+		assert.Equal(t, 1, exitCode)
+	})
+
+	t.Run("it exits with non zero if failing to archive", func(t *testing.T) {
+		stdOut, stdErr := newMockWriters()
+
+		archiveFilepath, _ := getSingleTestPaths(t, "dash/prefix")
+
+		args := []string{"ctar", sourceDir, archiveFilepath}
+
+		exitCode := run(stdOut, stdErr, args)
+		assert.Equal(t, 1, exitCode)
+	})
 }

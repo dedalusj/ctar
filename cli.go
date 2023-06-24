@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/dustin/go-humanize"
@@ -10,45 +12,47 @@ import (
 
 // parseCliArgs parse and validate the cli args
 // if any of the cli args fail validation it will print an error and exit
-func parseCliArgs() Args {
+func parseCliArgs(stdErr io.Writer, args []string) (Args, *int) {
+	cli := flag.NewFlagSet(args[0], flag.ContinueOnError)
+	cli.SetOutput(stdErr)
+
 	var maxSizeStr string
-	flag.StringVar(&maxSizeStr, "size", "0", "Maximum size of all the files to include in the archive. Use 0 if all the files are to be archived")
+	cli.StringVar(&maxSizeStr, "size", "0", "Maximum size of all the files to include in the archive. Use 0 if all the files are to be archived")
 
 	var verbose bool
-	flag.BoolVar(&verbose, "v", false, "List files included in the archive")
+	cli.BoolVar(&verbose, "v", false, "Verbose mode to list files included in the archive")
 
-	var help bool
-	flag.BoolVar(&help, "help", false, "Show usage")
-
-	flag.Parse()
-
-	if help {
-		printUsage()
-		os.Exit(0)
+	if err := cli.Parse(args[1:]); err != nil {
+		exitCode := ptr(1)
+		if errors.Is(err, flag.ErrHelp) {
+			exitCode = ptr(0)
+		}
+		return Args{}, exitCode
 	}
 
-	if len(os.Args) < 3 {
-		_, _ = fmt.Fprintln(os.Stderr, "Argument missing")
-		printUsage()
-		os.Exit(1)
+	args = cli.Args()
+	if len(args) < 2 {
+		_, _ = fmt.Fprintln(stdErr, "Argument missing")
+		cli.Usage()
+		return Args{}, ptr(1)
 	}
 
-	sourceDir, archiveFile := os.Args[1], os.Args[2]
+	sourceDir, archiveFile := args[0], args[1]
 	if sdInfo, err := os.Stat(sourceDir); os.IsNotExist(err) {
-		_, _ = fmt.Fprintf(os.Stderr, "Source directory %s does not exists\n", sourceDir)
-		printUsage()
-		os.Exit(1)
+		_, _ = fmt.Fprintf(stdErr, "Source directory %s does not exists\n", sourceDir)
+		cli.Usage()
+		return Args{}, ptr(1)
 	} else if !sdInfo.IsDir() {
-		_, _ = fmt.Fprintf(os.Stderr, "Source directory %s is not a directory\n", sourceDir)
-		printUsage()
-		os.Exit(1)
+		_, _ = fmt.Fprintf(stdErr, "Source directory %s is not a directory\n", sourceDir)
+		cli.Usage()
+		return Args{}, ptr(1)
 	}
 
 	maxSize, err := humanize.ParseBytes(maxSizeStr)
 	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, "Invalid format for max size")
-		printUsage()
-		os.Exit(1)
+		_, _ = fmt.Fprintln(stdErr, "Invalid format for max size")
+		cli.Usage()
+		return Args{}, ptr(1)
 	}
 
 	return Args{
@@ -56,9 +60,9 @@ func parseCliArgs() Args {
 		ArchiveFile: archiveFile,
 		MaxSize:     maxSize,
 		Verbose:     verbose,
-	}
+	}, nil
 }
 
-func printUsage() {
-	_, _ = fmt.Fprintln(os.Stderr, "Usage")
+func ptr[T any](v T) *T {
+	return &v
 }

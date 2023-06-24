@@ -20,7 +20,7 @@ type Args struct {
 	Verbose     bool
 }
 
-func Archive(args Args) error {
+func Archive(args Args, stdOut io.Writer) error {
 	files, err := listFiles(args.SourceDir)
 	if err != nil {
 		return fmt.Errorf("failed reading files in %s: %w", args.SourceDir, err)
@@ -49,7 +49,7 @@ func Archive(args Args) error {
 		}
 
 		if args.Verbose {
-			fmt.Println(file.Path)
+			_, _ = fmt.Fprintln(stdOut, file.Path)
 		}
 
 		totalSize += uint64(file.Size)
