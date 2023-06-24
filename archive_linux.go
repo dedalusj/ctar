@@ -2,6 +2,12 @@
 
 package main
 
+import (
+	"os"
+	"syscall"
+	"time"
+)
+
 func fileInfoToFile(path string, info os.FileInfo) File {
 	mtime := info.ModTime()
 	stat := info.Sys().(*syscall.Stat_t)
