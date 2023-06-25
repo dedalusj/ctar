@@ -120,7 +120,9 @@ func Test_Archive(t *testing.T) {
 
 		err = archiver.Walk(archiveFilepath, func(f archiver.File) error {
 			if header, ok := f.Header.(*tar.Header); ok {
-				fixtureFileInfo, err := os.Stat(header.Name)
+				filename := header.Name
+				filename = restoreAbsPath(filename)
+				fixtureFileInfo, err := os.Stat(filename)
 				assert.NoError(t, err)
 
 				fixtureModTime := fixtureFileInfo.ModTime().Truncate(time.Second)

@@ -4,6 +4,7 @@ package main
 
 import (
 	"os"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -23,5 +24,8 @@ func fileInfoToFile(path string, info os.FileInfo) File {
 }
 
 func cleanPath(p string) string {
-	return p
+	if !filepath.IsAbs(p) {
+		return p
+	}
+	return strings.TrimPrefix(p, "/")
 }

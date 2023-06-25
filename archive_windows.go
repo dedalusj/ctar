@@ -25,6 +25,9 @@ func fileInfoToFile(path string, info os.FileInfo) File {
 }
 
 func cleanPath(p string) string {
+	if !filepath.IsAbs(p) {
+		return p
+	}
 	volume := filepath.VolumeName(p) + "\\"
 	return strings.TrimPrefix(p, volume)
 }
