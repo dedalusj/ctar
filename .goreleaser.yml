@@ -3,4 +3,4 @@ builds:
     binary: ctar
     env:
       - CGO_ENABLED=0
-    goos: [ linux,darwin ]
+    goos: [ linux, darwin, windows ]
