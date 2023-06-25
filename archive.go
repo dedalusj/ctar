@@ -98,9 +98,11 @@ func addToArchive(tw *tar.Writer, file File) error {
 		return err
 	}
 
+	fileName := cleanPath(file.Path)
+
 	// Use full path as name (FileInfoHeader only takes the basename)
 	// If we don't do this the directory structure would not be preserved
-	header.Name = file.Path
+	header.Name = fileName
 
 	// Write file header to the tar archive
 	if err = tw.WriteHeader(header); err != nil {

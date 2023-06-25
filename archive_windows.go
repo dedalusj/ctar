@@ -1,17 +1,19 @@
-//go:build darwin
+//go:build windows
 
 package main
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 )
 
 func fileInfoToFile(path string, info os.FileInfo) File {
 	mtime := info.ModTime()
-	stat := info.Sys().(*syscall.Stat_t)
-	atime := time.Unix(stat.Atimespec.Sec, stat.Atimespec.Nsec)
+	fileTime := info.Sys().(*syscall.Win32FileAttributeData).LastAccessTime
+	atime := time.Unix(0, fileTime.Nanoseconds())
 
 	return File{
 		Path:  path,
@@ -23,5 +25,6 @@ func fileInfoToFile(path string, info os.FileInfo) File {
 }
 
 func cleanPath(p string) string {
-	return p
+	volume := filepath.VolumeName(p) + "\\"
+	return strings.TrimPrefix(p, volume)
 }

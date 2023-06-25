@@ -21,3 +21,7 @@ func fileInfoToFile(path string, info os.FileInfo) File {
 		Info:  info,
 	}
 }
+
+func cleanPath(p string) string {
+	return p
+}
