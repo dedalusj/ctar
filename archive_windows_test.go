@@ -2,7 +2,10 @@
 
 package main
 
-import "path/filepath"
+import (
+	"os"
+	"path/filepath"
+)
 
 func restoreAbsPath(p string) string {
 	if filepath.IsAbs(p) {
